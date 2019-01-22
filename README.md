@@ -13,7 +13,7 @@ url={https://openreview.net/forum?id=ByxPYjC5KQ},
 ## Requirements
 - Pytorch 0.4.1 
 ## Usage
-```python
+```
 python GradientPenaltiesGAN.py --help 
 
 usage: GradientPenaltiesGAN.py [-h] [--nhidden NHIDDEN] [--gnlayers GNLAYERS]
