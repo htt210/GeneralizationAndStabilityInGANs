@@ -51,3 +51,5 @@ optional arguments:
   --ncritic NCRITIC     critic iters / generator iter
 ```
 
+The code for ImageNet experiment is available at: https://github.com/LMescheder/GAN_stability. 
+
