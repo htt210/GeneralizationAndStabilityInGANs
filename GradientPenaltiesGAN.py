@@ -166,50 +166,14 @@ def visualize_grad(G: Generator, D: Discriminator, criterion, fig, ax, scale, de
     return coord, grad
 
 
-def accumulate_grad(acc_grad, new_grad, new_grad_weight=0.01):
-    if acc_grad is None:
-        acc_grad = new_grad
-    grad = new_grad * new_grad_weight + acc_grad * (1 - new_grad_weight)
-    return grad
-
-
 def show_grad(coord, grad, fig, ax):
     ax.quiver(coord[:, 0], coord[:, 1], grad[:, 0], grad[:, 1])
-
-
-# code by Mescheder et al.
-def toggle_grad(model, requires_grad):
-    for p in model.parameters():
-        p.requires_grad_(requires_grad)
-
-
-def update_average(model_tgt, model_src, model_weight):
-    toggle_grad(model_src, False)
-    toggle_grad(model_tgt, False)
-
-    param_dict_src = dict(model_src.named_parameters())
-
-    for p_name, p_tgt in model_tgt.named_parameters():
-        p_src = param_dict_src[p_name]
-        assert(p_src is not p_tgt)
-        p_tgt.copy_(model_weight * p_tgt + (1. - model_weight) * p_src)
-# end code by Mescheder et al.
 
 
 def GAN_GP(D, G, data, noise, niter=10000, batch_size=32, optimizer='Adam',
            lrg=1e-3, lrd=3e-3, center=0, LAMBDA=1, alpha=None, device='cuda', prefix='figs/', args=None):
     D.to(device)
     G.to(device)
-
-    acc_D = Discriminator(args.nhidden, args.dnlayers)
-    acc_G = Generator(args.nhidden, args.gnlayers)
-
-    acc_D.to(device)
-    acc_G.to(device)
-
-    # copy the weight of D and G to acc_D and acc_G
-    update_average(acc_D, D, model_weight=1.)
-    update_average(acc_G, G, model_weight=1.)
 
     if optimizer == 'SGD':
         optim_d = optim.SGD(D.parameters(), lr=lrd)
@@ -224,8 +188,6 @@ def GAN_GP(D, G, data, noise, niter=10000, batch_size=32, optimizer='Adam',
     ones = torch.ones(batch_size, device=device)
 
     fig, ax = plt.subplots(1, 1, figsize=(4, 4))
-    acc_fig, acc_ax = plt.subplots(1, 1, figsize=(4, 4))
-    acc_grad = None
 
     scale = 1
     if args is not None:
@@ -239,8 +201,6 @@ def GAN_GP(D, G, data, noise, niter=10000, batch_size=32, optimizer='Adam',
             noise_batch = noise.next_batch(512, device=device)
             fake_batch = G(noise_batch)
             fake_batch = fake_batch.data.cpu().numpy()
-            acc_batch = acc_G(noise_batch)
-            acc_batch = acc_batch.data.cpu().numpy()
 
             real_batch = data.next_batch(512, device=device)
 
@@ -254,18 +214,6 @@ def GAN_GP(D, G, data, noise, niter=10000, batch_size=32, optimizer='Adam',
             coord, grad = visualize_grad(G, D, criterion, fig, ax, scale=scale, device=device)
             plt.draw()
             plt.savefig(prefix + 'fig_%05d.pdf' % iter, bbox_inches='tight')
-            plt.pause(0.1)
-
-            plt.figure(acc_fig.number)
-            acc_ax.clear()
-            acc_ax.scatter(real_batch[:, 0], real_batch[:, 1], s=2)
-            acc_ax.scatter(acc_batch[:, 0], acc_batch[:, 1], s=2, c='r', marker='+')
-            acc_ax.set_xlim((-scale, scale))
-            acc_ax.set_ylim((-scale, scale))
-            acc_grad = accumulate_grad(acc_grad, grad, new_grad_weight=args.gradweight)
-            show_grad(coord, acc_grad, acc_fig, acc_ax)
-            plt.draw()
-            plt.savefig(prefix + 'fig_acc_%05d.pdf' % iter, bbox_inches='tight')
             plt.pause(0.1)
 
         # train D
@@ -468,9 +416,6 @@ if __name__ == "__main__":
     parser.add_argument('--nhidden', type=int, default=64, help='number of hidden neurons')
     parser.add_argument('--gnlayers', type=int, default=2, help='number of hidden layers in generator')
     parser.add_argument('--dnlayers', type=int, default=2, help='number of hidden layers in discriminator/critic')
-    parser.add_argument('--gradweight', type=float, default=0.01, help='weight of the new grad in the moving average')
-    parser.add_argument('--gweight', type=float, default=0.01, help='weight of the new G')
-    parser.add_argument('--dweight', type=float, default=0.1, help='weight of the new D')
     parser.add_argument('--niters', type=int, default=20000, help='number of iterations')
     parser.add_argument('--device', type=str, default='cuda', help='id of the gpu. -1 for cpu')
     parser.add_argument('--batch_size', type=int, default=128, help='batch size')
@@ -489,11 +434,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     prefix = 'figs/%s_%s_gradfield_center_%.2f_alpha_%s_lambda_%.2f_lrg_%.5f_lrd_%.5f_nhidden_%d_scale_%.2f' \
-             '_optim_%s_gnlayers_%d_dnlayers_%d_gradweight_%.4f_dweight_%.4f_gweight_%.4f_ncritic_%d/' % \
+             '_optim_%s_gnlayers_%d_dnlayers_%d_ncritic_%d/' % \
              (args.loss, args.dataset, args.center, str(args.alpha), args.LAMBDA, args.lrg, args.lrd, args.nhidden,
-              args.scale, args.optim, args.gnlayers, args.dnlayers, args.gradweight, args.dweight, args.gweight,
+              args.scale, args.optim, args.gnlayers, args.dnlayers,
               args.ncritic)
+
     print(prefix)
+    if not os.path.exists('figs'):
+        os.mkdir('figs')
     if not os.path.exists(prefix):
         os.mkdir(prefix)
 

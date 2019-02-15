@@ -14,15 +14,12 @@ url={https://openreview.net/forum?id=ByxPYjC5KQ},
 - Pytorch 0.4.1 
 ## Usage
 ```
-python GradientPenaltiesGAN.py --help 
-
 usage: GradientPenaltiesGAN.py [-h] [--nhidden NHIDDEN] [--gnlayers GNLAYERS]
-                               [--dnlayers DNLAYERS] [--gradweight GRADWEIGHT]
-                               [--gweight GWEIGHT] [--dweight DWEIGHT]
-                               [--niters NITERS] [--device DEVICE]
-                               [--batch_size BATCH_SIZE] [--center CENTER]
-                               [--LAMBDA LAMBDA] [--alpha ALPHA] [--lrg LRG]
-                               [--lrd LRD] [--dataset DATASET] [--scale SCALE]
+                               [--dnlayers DNLAYERS] [--niters NITERS]
+                               [--device DEVICE] [--batch_size BATCH_SIZE]
+                               [--center CENTER] [--LAMBDA LAMBDA]
+                               [--alpha ALPHA] [--lrg LRG] [--lrd LRD]
+                               [--dataset DATASET] [--scale SCALE]
                                [--loss LOSS] [--optim OPTIM]
                                [--ncritic NCRITIC]
 
@@ -31,10 +28,6 @@ optional arguments:
   --nhidden NHIDDEN     number of hidden neurons
   --gnlayers GNLAYERS   number of hidden layers in generator
   --dnlayers DNLAYERS   number of hidden layers in discriminator/critic
-  --gradweight GRADWEIGHT
-                        weight of the new grad in the moving average
-  --gweight GWEIGHT     weight of the new G
-  --dweight DWEIGHT     weight of the new D
   --niters NITERS       number of iterations
   --device DEVICE       id of the gpu. -1 for cpu
   --batch_size BATCH_SIZE
@@ -49,6 +42,7 @@ optional arguments:
   --loss LOSS           gan | wgan
   --optim OPTIM         optimizer to use
   --ncritic NCRITIC     critic iters / generator iter
+
 ```
 
 For ImageNet experiment, we used the code by Mescheder et al. https://github.com/LMescheder/GAN_stability. 
